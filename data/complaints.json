@@ -1,0 +1,77 @@
+[
+  {
+    "id": "1765882320166",
+    "studentId": "1765882057654",
+    "title": "light",
+    "description": "bulb broke",
+    "priority": "Normal",
+    "status": "Closed",
+    "assignedWorkerId": "1765882996344",
+    "createdAt": "2025-12-16T10:52:00.166Z"
+  },
+  {
+    "id": "1765883984516",
+    "studentId": "1765882057654",
+    "title": "complaint2",
+    "description": "description of complaint2",
+    "priority": "Normal",
+    "status": "Closed",
+    "assignedWorkerId": "1765882996344",
+    "createdAt": "2025-12-16T11:19:44.516Z"
+  },
+  {
+    "id": "1765884951423",
+    "studentId": "1765882057654",
+    "title": "checking emergency and normal",
+    "description": "description for checking emergency normal",
+    "priority": "Normal",
+    "department": "Electrical",
+    "status": "Assigned",
+    "assignedWorkerId": "1765882996344",
+    "createdAt": "2025-12-16T11:35:51.423Z"
+  },
+  {
+    "id": "1765884992179",
+    "studentId": "1765882057654",
+    "title": "emergency complaining",
+    "description": "let's see if this goes up",
+    "priority": "Emergency",
+    "department": "Electrical",
+    "status": "Assigned",
+    "assignedWorkerId": "1765882996344",
+    "createdAt": "2025-12-16T11:36:32.179Z"
+  },
+  {
+    "id": "1765886838727",
+    "studentId": "1765882057654",
+    "title": "debug",
+    "description": "debugging description",
+    "priority": "Normal",
+    "department": "Electrical",
+    "status": "Assigned",
+    "assignedWorkerId": "1765882996344",
+    "createdAt": "2025-12-16T12:07:18.727Z"
+  },
+  {
+    "id": "1765886922893",
+    "studentId": "1765882057654",
+    "title": "just checking electrical",
+    "description": "description of just checking electrical",
+    "priority": "Normal",
+    "department": "Electrical",
+    "status": "Pending",
+    "assignedWorkerId": null,
+    "createdAt": "2025-12-16T12:08:42.893Z"
+  },
+  {
+    "id": "1765887646278",
+    "studentId": "1765882057654",
+    "title": "cooler fire",
+    "description": "laptop fired",
+    "priority": "Normal",
+    "department": "Electrical",
+    "status": "Closed",
+    "assignedWorkerId": "1765882996344",
+    "createdAt": "2025-12-16T12:20:46.278Z"
+  }
+]

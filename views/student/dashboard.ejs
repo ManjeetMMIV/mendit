@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Student Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- Top Bar -->
+  <nav class="bg-white shadow px-6 py-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-blue-600">MENDit</h1>
+    <a
+      href="/logout"
+      class="text-sm font-medium text-red-500 hover:text-red-600"
+    >
+      Logout
+    </a>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-5xl mx-auto p-6">
+    <h2 class="text-3xl font-semibold text-gray-800 mb-8">
+      Student Dashboard
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Raise Complaint Card -->
+      <a
+        href="/student/complaints/new"
+        class="block bg-white rounded-lg shadow hover:shadow-lg transition p-6"
+      >
+        <h3 class="text-xl font-bold text-gray-800">
+          Raise New Complaint
+        </h3>
+        <p class="text-gray-600 mt-2">
+          Report an issue related to your hostel room or facilities.
+        </p>
+      </a>
+
+      <!-- View Complaints Card -->
+      <a
+        href="/student/complaints"
+        class="block bg-white rounded-lg shadow hover:shadow-lg transition p-6"
+      >
+        <h3 class="text-xl font-bold text-gray-800">
+          View My Complaints
+        </h3>
+        <p class="text-gray-600 mt-2">
+          Track the status of complaints you have already raised.
+        </p>
+      </a>
+
+    </div>
+  </main>
+
+</body>
+</html>
+

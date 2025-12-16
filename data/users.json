@@ -1,0 +1,27 @@
+{
+  "students": [
+    {
+      "id": "1765882057654",
+      "name": "s1",
+      "email": "s1@gmail.com",
+      "password": "$2b$10$z3BX.ElZpRqcbjaJRgZDS.nId7Nn6.mG2yl8K5/psOWQXxp./Kg/G"
+    }
+  ],
+  "workers": [
+    {
+      "id": "1765882996344",
+      "name": "w1",
+      "email": "w1@gmail.com",
+      "department": "Electrical",
+      "password": "$2b$10$7qn.4oKQEuTskKdiFEEoS.n3nUeOz9DrXrWVZFSlhACosNkodhPeu"
+    }
+  ],
+  "admins": [
+    {
+      "id": "1765883088684",
+      "name": "a1",
+      "email": "a1@gmail.com",
+      "password": "$2b$10$VumEkzB.KVspCdkSf6EwnuZzpJgM9koHjiMfU1O/WNK8XLHZfJI8m"
+    }
+  ]
+}

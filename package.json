@@ -1,0 +1,20 @@
+{
+  "name": "mendit",
+  "version": "1.0.0",
+  "description": "Hostel grievance management system using Express, EJS and fs",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "author": "Manjeet Singh",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "ejs": "^3.1.10",
+    "express": "^5.2.1",
+    "express-session": "^1.18.2",
+    "path": "^0.12.7"
+  },
+  "keywords": [],
+  "type": "commonjs"
+}

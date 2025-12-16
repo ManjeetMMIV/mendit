@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title><%= title || "MENDit" %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <nav class="bg-white shadow px-6 py-4 flex justify-between">
+    <h1 class="text-xl font-bold text-blue-600">MENDit</h1>
+    <a href="/logout" class="text-red-500 font-medium">Logout</a>
+  </nav>
+
+  <main class="p-6">
+    <%- body %>
+  </main>
+
+</body>
+</html>

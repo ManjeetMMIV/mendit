@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- Top Bar -->
+  <nav class="bg-white shadow px-6 py-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-blue-600">MENDit</h1>
+    <a
+      href="/logout"
+      class="text-sm font-medium text-red-500 hover:text-red-600"
+    >
+      Logout
+    </a>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto p-6">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-3xl font-semibold text-gray-800">
+        Admin Dashboard
+      </h2>
+
+      <a
+        href="/admin/analytics"
+        class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition"
+      >
+        View Analytics
+      </a>
+    </div>
+
+    <% if (complaints.length === 0) { %>
+      <div class="bg-white rounded-lg shadow p-6 text-center text-gray-600">
+        No complaints found.
+      </div>
+    <% } else { %>
+
+      <div class="bg-white rounded-lg shadow overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-200 text-gray-700">
+            <tr>
+              <th class="px-4 py-3 text-left">Title</th>
+              <th class="px-4 py-3 text-center">Priority</th>
+              <th class="px-4 py-3 text-center">Status</th>
+              <th class="px-4 py-3 text-center">Assigned Worker</th>
+              <th class="px-4 py-3 text-center">Action</th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y">
+            <% complaints.forEach(c => { %>
+              <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium text-gray-800">
+                  <%= c.title %>
+                </td>
+
+                <td class="px-4 py-3 text-center">
+                  <% if (c.priority === "Emergency") { %>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                      Emergency
+                    </span>
+                  <% } else { %>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                      Normal
+                    </span>
+                  <% } %>
+                </td>
+
+                <td class="px-4 py-3 text-center">
+                  <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                    <%= c.status %>
+                  </span>
+                </td>
+
+                <td class="px-4 py-3 text-center">
+                  <% if (c.assignedWorkerId) { %>
+                    <span class="text-gray-800 font-medium">
+                      <%= c.assignedWorkerId %>
+                    </span>
+                  <% } else { %>
+                    <span class="text-gray-400">Not Assigned</span>
+                  <% } %>
+                </td>
+
+                <td class="px-4 py-3 text-center">
+                  <a
+                    href="/admin/complaints/<%= c.id %>/assign"
+                    class="text-sm font-medium text-blue-600 hover:underline"
+                  >
+                    Assign
+                  </a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+    <% } %>
+
+  </main>
+
+</body>
+</html>
