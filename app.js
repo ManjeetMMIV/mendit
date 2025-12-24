@@ -1,3 +1,5 @@
+require('dotenv').config();
+const connectDB = require('./models/db');
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
@@ -37,6 +39,10 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}).catch(err => {
+  console.error('Failed to start server:', err);
 });

@@ -1,28 +1,20 @@
-const { readJSON, writeJSON } = require("./fs.helper");
+const User = require('../models/user.model');
+const Complaint = require('../models/complaint.model');
 
-function autoAssignComplaint(complaintId) {
-  const users = readJSON("users.json");
-  const complaints = readJSON("complaints.json");
+async function autoAssignComplaint(complaintId) {
+  // complaintId can be ObjectId string or legacy id; so we assume ObjectId
+  const complaint = await Complaint.findById(complaintId);
+  if (!complaint) return false;
 
-  const index = complaints.findIndex(c => c.id === complaintId);
-  if (index === -1) return false;
+  const department = complaint.department;
+  if (!department) return false;
 
-  const complaint = complaints[index];
+  const availableWorkers = await User.find({ role: 'worker', department }).limit(1);
+  if (!availableWorkers || availableWorkers.length === 0) return false;
 
-  const availableWorkers = users.workers.filter(
-    w => w.department === complaint.department
-  );
-
-  if (availableWorkers.length === 0) {
-    return false;
-  }
-
-  // Assign first available worker
-  complaint.assignedWorkerId = availableWorkers[0].id;
-  complaint.status = "Assigned";
-
-  complaints[index] = complaint;
-  writeJSON("complaints.json", complaints);
+  complaint.assignedWorkerId = availableWorkers[0]._id;
+  complaint.status = 'Assigned';
+  await complaint.save();
 
   return true;
 }

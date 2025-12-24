@@ -4,7 +4,8 @@ const router = express.Router();
 const requireAuth = require("../middlewares/auth.middleware");
 const requireRole = require("../middlewares/role.middleware");
 
-const { readJSON, writeJSON } = require("../utils/fs.helper");
+const Complaint = require('../models/complaint.model');
+const Feedback = require('../models/feedback.model');
 const autoAssignComplaint = require("../utils/autoAssign");
 
 /**
@@ -29,28 +30,25 @@ router.get(
 /**
  * CREATE NEW COMPLAINT + AUTO ASSIGN
  */
-router.post("/complaints/new", requireAuth, requireRole("student"), (req, res) => {
-  const complaints = readJSON("complaints.json");
+router.post("/complaints/new", requireAuth, requireRole("student"), async (req, res) => {
+  try {
+    const complaint = await Complaint.create({
+      studentId: req.session.user.id,
+      title: req.body.title,
+      description: req.body.description,
+      priority: req.body.priority,
+      department: req.body.department,
+      status: "Pending"
+    });
 
-  const complaint = {
-    id: Date.now().toString(),
-    studentId: req.session.user.id,
-    title: req.body.title,
-    description: req.body.description,
-    priority: req.body.priority,
-    department: req.body.department,
-    status: "Pending",
-    assignedWorkerId: null,
-    createdAt: new Date().toISOString()
-  };
+    // IMPORTANT: pass ObjectId/string
+    await autoAssignComplaint(complaint._id);
 
-  complaints.push(complaint);
-  writeJSON("complaints.json", complaints);
-
-  // IMPORTANT: pass ID, not object
-  autoAssignComplaint(complaint.id);
-
-  res.redirect("/student/complaints");
+    res.redirect("/student/complaints");
+  } catch (err) {
+    console.error(err);
+    res.render('error', { message: 'Could not create complaint' });
+  }
 });
 
 
@@ -61,14 +59,15 @@ router.get(
   "/complaints",
   requireAuth,
   requireRole("student"),
-  (req, res) => {
-    const complaints = readJSON("complaints.json");
-
-    const myComplaints = complaints.filter(
-      c => c.studentId === req.session.user.id
-    );
-
-    res.render("student/complaints", { complaints: myComplaints });
+  async (req, res) => {
+    try {
+      let myComplaints = await Complaint.find({ studentId: req.session.user.id }).lean();
+      myComplaints = myComplaints.map(c => ({ ...c, id: c._id.toString() }));
+      res.render("student/complaints", { complaints: myComplaints });
+    } catch (err) {
+      console.error(err);
+      res.render('error', { message: 'Could not fetch complaints' });
+    }
   }
 );
 
@@ -79,21 +78,25 @@ router.get(
   "/complaints/:id/feedback",
   requireAuth,
   requireRole("student"),
-  (req, res) => {
-    const complaints = readJSON("complaints.json");
-    const complaint = complaints.find(c => c.id === req.params.id);
+  async (req, res) => {
+    try {
+      const complaint = await Complaint.findById(req.params.id).lean();
 
-    if (!complaint) {
-      return res.render("error", { message: "Complaint not found" });
+      if (!complaint) {
+        return res.render("error", { message: "Complaint not found" });
+      }
+
+      if (complaint.status !== "Completed") {
+        return res.render("error", {
+          message: "Feedback allowed only after completion"
+        });
+      }
+
+      res.render("student/feedback", { complaint });
+    } catch (err) {
+      console.error(err);
+      res.render('error', { message: 'Could not fetch complaint' });
     }
-
-    if (complaint.status !== "Completed") {
-      return res.render("error", {
-        message: "Feedback allowed only after completion"
-      });
-    }
-
-    res.render("student/feedback", { complaint });
   }
 );
 
@@ -104,30 +107,27 @@ router.post(
   "/complaints/:id/feedback",
   requireAuth,
   requireRole("student"),
-  (req, res) => {
-    const complaints = readJSON("complaints.json");
-    const feedback = readJSON("feedback.json");
+  async (req, res) => {
+    try {
+      const complaint = await Complaint.findById(req.params.id);
+      if (!complaint) {
+        return res.render("error", { message: "Complaint not found" });
+      }
 
-    const index = complaints.findIndex(c => c.id === req.params.id);
+      await Feedback.create({
+        complaintId: complaint._id,
+        rating: Number(req.body.rating),
+        comment: req.body.comment
+      });
 
-    if (index === -1) {
-      return res.render("error", { message: "Complaint not found" });
+      complaint.status = "Closed";
+      await complaint.save();
+
+      res.redirect("/student/complaints");
+    } catch (err) {
+      console.error(err);
+      res.render('error', { message: 'Could not submit feedback' });
     }
-
-    // store feedback
-    feedback.push({
-      complaintId: req.params.id,
-      rating: req.body.rating,
-      comment: req.body.comment
-    });
-
-    // close complaint
-    complaints[index].status = "Closed";
-
-    writeJSON("feedback.json", feedback);
-    writeJSON("complaints.json", complaints);
-
-    res.redirect("/student/complaints");
   }
 );
 

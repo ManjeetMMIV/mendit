@@ -2,143 +2,142 @@ const express = require("express");
 const router = express.Router();
 const requireAuth = require("../middlewares/auth.middleware");
 const requireRole = require("../middlewares/role.middleware");
-const { readJSON, writeJSON } = require("../utils/fs.helper");
+
+const User = require('../models/user.model');
+const Complaint = require('../models/complaint.model');
+const Feedback = require('../models/feedback.model');
+const Transaction = require('../models/transaction.model');
 
 // Admin dashboard - list all complaints
-router.get("/dashboard", requireAuth, requireRole("admin"), (req, res) => {
-  const complaints = readJSON("complaints.json");
-  res.render("admin/dashboard", { complaints });
-});
-router.get("/analytics", requireAuth, requireRole("admin"), (req, res) => {
-  const users = readJSON("users.json");
-  const complaints = readJSON("complaints.json");
-  const feedback = readJSON("feedback.json");
-  const transactions = readJSON("transactions.json");
-
-  const workerStats = users.workers.map(worker => {
-    const handledComplaints = complaints.filter(
-      c => c.assignedWorkerId === worker.id
-    );
-
-    const ratings = feedback.filter(f =>
-      handledComplaints.some(c => c.id === f.complaintId)
-    );
-
-    const totalCost = transactions
-      .filter(t => t.workerId === worker.id)
-      .reduce((sum, t) => sum + t.cost, 0);
-
-    const avgRating =
-      ratings.length === 0
-        ? "N/A"
-        : (
-            ratings.reduce((s, r) => s + Number(r.rating), 0) /
-            ratings.length
-          ).toFixed(2);
-
-    return {
-      name: worker.name,
-      department: worker.department,
-      complaints: handledComplaints.length,
-      avgRating,
-      totalCost
-    };
-  });
-
-  res.render("admin/analytics", { workerStats });
+router.get("/dashboard", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    let complaints = await Complaint.find().lean();
+    complaints = complaints.map(c => ({ ...c, id: c._id.toString() }));
+    res.render("admin/dashboard", { complaints });
+  } catch (err) {
+    console.error(err);
+    res.render('error', { message: 'Could not fetch complaints' });
+  }
 });
 
-router.get("/analytics/export", requireAuth, requireRole("admin"), (req, res) => {
-  const users = readJSON("users.json");
-  const complaints = readJSON("complaints.json");
-  const feedback = readJSON("feedback.json");
-  const transactions = readJSON("transactions.json");
+router.get("/analytics", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const workers = await User.find({ role: 'worker' }).lean();
 
-  // Build analytics again (same logic)
-  const rows = [];
+    const workerStats = await Promise.all(workers.map(async worker => {
+      const handledComplaints = await Complaint.find({ assignedWorkerId: worker._id });
 
-  rows.push([
-    "Worker Name",
-    "Department",
-    "Complaints Handled",
-    "Average Rating",
-    "Total Cost"
-  ]);
+      const ratingsDocs = await Feedback.find({ complaintId: { $in: handledComplaints.map(c => c._id) } });
 
-  users.workers.forEach(worker => {
-    const handledComplaints = complaints.filter(
-      c => c.assignedWorkerId === worker.id
-    );
+      const transactions = await Transaction.find({ workerId: worker._id });
 
-    const ratings = feedback.filter(f =>
-      handledComplaints.some(c => c.id === f.complaintId)
-    );
+      const totalCost = transactions.reduce((sum, t) => sum + (t.cost || 0), 0);
 
-    const totalCost = transactions
-      .filter(t => t.workerId === worker.id)
-      .reduce((sum, t) => sum + t.cost, 0);
+      const avgRating = ratingsDocs.length === 0 ? 'N/A' : (ratingsDocs.reduce((s, r) => s + Number(r.rating), 0) / ratingsDocs.length).toFixed(2);
 
-    const avgRating =
-      ratings.length === 0
-        ? "N/A"
-        : (
-            ratings.reduce((s, r) => s + Number(r.rating), 0) /
-            ratings.length
-          ).toFixed(2);
+      return {
+        name: worker.name,
+        department: worker.department,
+        complaints: handledComplaints.length,
+        avgRating,
+        totalCost
+      };
+    }));
+
+    res.render("admin/analytics", { workerStats });
+  } catch (err) {
+    console.error(err);
+    res.render('error', { message: 'Could not build analytics' });
+  }
+});
+
+router.get("/analytics/export", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const workers = await User.find({ role: 'worker' }).lean();
+
+    const rows = [];
 
     rows.push([
-      worker.name,
-      worker.department,
-      handledComplaints.length,
-      avgRating,
-      totalCost
+      "Worker Name",
+      "Department",
+      "Complaints Handled",
+      "Average Rating",
+      "Total Cost"
     ]);
-  });
 
-  // Convert to CSV
-  const csv = rows.map(r => r.join(",")).join("\n");
+    for (const worker of workers) {
+      const handledComplaints = await Complaint.find({ assignedWorkerId: worker._id });
+      const ratingsDocs = await Feedback.find({ complaintId: { $in: handledComplaints.map(c => c._id) } });
+      const transactions = await Transaction.find({ workerId: worker._id });
 
-  res.setHeader("Content-Type", "text/csv");
-  res.setHeader(
-    "Content-Disposition",
-    "attachment; filename=worker_analytics.csv"
-  );
+      const totalCost = transactions.reduce((sum, t) => sum + (t.cost || 0), 0);
+      const avgRating = ratingsDocs.length === 0 ? 'N/A' : (ratingsDocs.reduce((s, r) => s + Number(r.rating), 0) / ratingsDocs.length).toFixed(2);
 
-  res.send(csv);
+      rows.push([
+        worker.name,
+        worker.department,
+        handledComplaints.length,
+        avgRating,
+        totalCost
+      ]);
+    }
+
+    // Convert to CSV
+    const csv = rows.map(r => r.join(",")).join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=worker_analytics.csv"
+    );
+
+    res.send(csv);
+  } catch (err) {
+    console.error(err);
+    res.render('error', { message: 'Could not export analytics' });
+  }
 });
-
 
 
 // Show assignment page
-router.get("/complaints/:id/assign", requireAuth, requireRole("admin"), (req, res) => {
-  const complaints = readJSON("complaints.json");
-  const users = readJSON("users.json");
+router.get("/complaints/:id/assign", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id).lean();
+    if (!complaint) {
+      return res.render("error", { message: "Complaint not found" });
+    }
 
-  const complaint = complaints.find(c => c.id === req.params.id);
-  if (!complaint) {
-    return res.render("error", { message: "Complaint not found" });
+    let workers = await User.find({ role: 'worker' }).lean();
+    // ensure `id` string exists for templates
+    workers = workers.map(w => ({ ...w, id: w._id.toString() }));
+
+    res.render("admin/reassign", {
+      complaint,
+      workers
+    });
+  } catch (err) {
+    console.error(err);
+    res.render('error', { message: 'Could not load assignment page' });
   }
-
-  res.render("admin/reassign", {
-    complaint,
-    workers: users.workers
-  });
 });
 
 // Assign worker
-router.post("/complaints/:id/assign", requireAuth, requireRole("admin"), (req, res) => {
-  const complaints = readJSON("complaints.json");
-  const index = complaints.findIndex(c => c.id === req.params.id);
+router.post("/complaints/:id/assign", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) {
+      return res.render("error", { message: "Complaint not found" });
+    }
 
-  if (index === -1) {
-    return res.render("error", { message: "Complaint not found" });
+    complaint.assignedWorkerId = req.body.workerId;
+    complaint.status = "Assigned";
+
+    await complaint.save();
+    res.redirect("/admin/dashboard");
+  } catch (err) {
+    console.error(err);
+    res.render('error', { message: 'Could not assign worker' });
   }
-
-  complaints[index].assignedWorkerId = req.body.workerId;
-  complaints[index].status = "Assigned";
-
-  writeJSON("complaints.json", complaints);
-  res.redirect("/admin/dashboard");
 });
 
 module.exports = router;

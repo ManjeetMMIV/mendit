@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { readJSON, writeJSON } = require("../utils/fs.helper");
+const User = require('../models/user.model');
 const { hashPassword, comparePassword } = require("../utils/password.helper");
 
 // Role selection
@@ -19,36 +19,44 @@ router.get("/signup/:role", (req, res) => {
 });
 
 // Signup handler
-router.post("/signup/:role", (req, res) => {
-  const role = req.params.role;
-  const users = readJSON("users.json");
+router.post("/signup/:role", async (req, res) => {
+  try {
+    const role = req.params.role;
+    const payload = {
+      name: req.body.name,
+      email: req.body.email,
+      password: hashPassword(req.body.password),
+      role: role === 'student' ? 'student' : role === 'worker' ? 'worker' : 'admin'
+    };
 
-  const user = {
-    id: Date.now().toString(),
-    ...req.body,
-    password: hashPassword(req.body.password)
-  };
+    if (payload.role === 'worker') payload.department = req.body.department;
 
-  users[`${role}s`].push(user);
-  writeJSON("users.json", users);
-
-  res.redirect(`/login/${role}`);
+    await User.create(payload);
+    res.redirect(`/login/${role}`);
+  } catch (err) {
+    console.error(err);
+    res.render('error', { message: 'Signup failed' });
+  }
 });
 
 // Login handler
-router.post("/login/:role", (req, res) => {
-  const role = req.params.role;
-  const { email, password } = req.body;
+router.post("/login/:role", async (req, res) => {
+  try {
+    const role = req.params.role;
+    const { email, password } = req.body;
 
-  const users = readJSON("users.json")[`${role}s`];
-  const user = users.find(u => u.email === email);
+    const user = await User.findOne({ email, role });
 
-  if (!user || !comparePassword(password, user.password)) {
-    return res.render("error", { message: "Invalid credentials" });
+    if (!user || !comparePassword(password, user.password)) {
+      return res.render("error", { message: "Invalid credentials" });
+    }
+
+    req.session.user = { id: user.id, role };
+    res.redirect(`/${role}/dashboard`);
+  } catch (err) {
+    console.error(err);
+    res.render('error', { message: 'Login failed' });
   }
-
-  req.session.user = { id: user.id, role };
-  res.redirect(`/${role}/dashboard`);
 });
 
 // Logout
